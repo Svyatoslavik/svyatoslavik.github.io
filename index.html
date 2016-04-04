@@ -1,41 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<title>Document</title>
-	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
-	<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.js"></script>
-	<script src="Polyline.encoded.js"></script>
-	<style type="text/css">
-		.map{
-			width: 100%;
-			height: 700px;
-		}
-	</style>
-</head>
-<body>
-	<div class="map" id="js-map"></div>
-<script>
-$(function(){
-	var encodedPath = "g`mkHcqilDlAkHjAaHrAyGf@eCdCyMnBkK`@}Bd@_Ct@mEr@qEbAcIXmENmHD{BDoBJgFVgLFcEBaD^aYDgEcBHyAJ??eDPiCP{DTkBJeCNmAFeBJwBLeBJmAH??eCLgAFqAJ{AHiCNmAHkAFoCNaDRiAFmCNmEVmBLiBJBuJ?uI?aD?_C???_E?kI@mI?oE?_LNsFNaDRiDXyFPoCb@gIf@mJNqFMkFGkDSyIMoFWuKIyCWoKKsDIoFUwLZmEf@uFqCw@wAa@wEoAgEgAsCo@oA[eA}@iCkJs@gCe@aBaDiLiBcH}B{H}@cB_CuDo@eBUeBc@mDiAmJ~Ca@bC[u@eFiAoEkCsJ??sBsHi@sBc@}AmBkHuAgFs@iCWgBMqGIeICqBzEKnDI??zFMzIQnEIpD[IgCKqJMcJ??CsBGwFEiFQyNSwNh@eNLqABCFi@c@Dk@r@aDi@aEe@qAAwXt@cDHaAD";
-	//+"yilkHkaolDiBJy@DiAH_AF{DTkBJiAF{@FmAFeBJq@DeAFeBJmAH";
-
-	var map = L.map('js-map', {
-	    center: [49.233380, 28.466865],
-	    zoom: 13
-	});
-	L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-	    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-	}).addTo(map);
-
-
-	var polyline = L.Polyline.fromEncoded(encodedPath, {color: 'red'}).addTo(map);
-
-
-});
-
-
-</script>
-</body>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+        <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+        <style>
+            .map{
+                width: 100%;
+                height: 800px;
+            }
+        </style>
+    </head>
+    <body>
+        <div></div>
+        <div id="js-map" class="map">
+            
+        </div>
+        <script>
+        var map = L.map('js-map').setView([49.244320, 28.452712], 16);
+        var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        });
+        
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        osmLayer.addTo(map);
+        
+        var kadastr = L.tileLayer.wms("http://212.26.144.110/geowebcache/service/wms?tiled=true", {
+            layers: 'kadastr',
+            format: 'image/png',
+            transparent: true,
+            attribution: "Kadastr"
+        });
+        kadastr.addTo(map);
+       
+        
+        </script>
+    </body>
 </html>

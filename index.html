@@ -18,12 +18,34 @@ and open the template in the editor.
                 height: 800px;
                 cursor: default;
             }
+            .offset-params{
+                border: 1px solid #0000ff;
+                padding: 5px;
+            }
+            input[type="number"]{
+                width: 50px;
+                margin-bottom: 1px;
+                font-size: 16px;
+            }
+            label span{
+                width: 10px;
+                display: inline-block;
+            }
         </style>
     </head>
     <body>
         <div></div>
         <div id="js-map" class="map">
-            
+            <div id="js-controll-panel" class="leaflet-control leaflet-bar mycontrol" style="left: 10px; top: 115px; background: #eee; padding: 5px;">
+               
+                <input type="checkbox" id="js-offset-chbx"><label for="js-offset-chbx"> Смещение</label>
+                <div class="offset-params">
+                    <label><span>x:</span><input type="number" id="js-offset-x" value="2"/></label> px<br/>
+                    <label><span>y:</span><input type="number" id="js-offset-y" value="-2"/></label> px
+                </div>
+                
+                <div id="distance"></div>
+            </div>
         </div>
         <script>
             var degrees2meters = function(lat, lon) {
@@ -79,8 +101,29 @@ and open the template in the editor.
                         .setContent(data.dilanka)
                         .openOn(map);
                 }
+                
+                function updateOffset(){
+                    var x = parseFloat($('#js-offset-x').val());
+                    var y = parseFloat($('#js-offset-y').val());
+                    if(!$('#js-offset-chbx').is(':checked')){
+                        x=0;
+                        y=0;
+                    }
+                    $(kadastr.getContainer()).css({
+                       'margin-top': y+'px',
+                       'margin-left':x+'px'
+                    });
+                }
+                $('#js-offset-x, #js-offset-y, #js-offset-chbx').on('change', function(e){
+                    e.stopPropagation();
+                    console.log('change')
+                    updateOffset();
+                });
+                $('#js-controll-panel').on('click dblclick mousedown', function(e){
+                    e.stopPropagation();
+                });
             });
-        
+            
        
         
         </script>

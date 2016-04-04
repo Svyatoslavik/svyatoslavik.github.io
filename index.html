@@ -10,7 +10,9 @@ and open the template in the editor.
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
-        <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+        <script src="http://cdn.leafletjs.com/leaflet/v1.0.0-beta.2/leaflet.js"></script>
+        <script src="leaflet-bing-layer.js"></script>
+        <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
         <script src="https://code.jquery.com/jquery-1.12.2.min.js" integrity="sha256-lZFHibXzMHo3GGeehn1hudTAP3Sc0uKXBXAzHX1sjtk=" crossorigin="anonymous"></script>
         <style>
             .map{
@@ -37,7 +39,8 @@ and open the template in the editor.
         <div></div>
         <div id="js-map" class="map">
             <div id="js-controll-panel" class="leaflet-control leaflet-bar mycontrol" style="left: 10px; top: 115px; background: #eee; padding: 5px;">
-               
+               <input type="checkbox" id="js-satelite-chbx"><label for="js-satelite-chbx"> Спутник</label><br/>
+               <input type="checkbox" id="js-kadastr-chbx" checked="checked"><label for="js-kadastr-chbx"> Кадастр</label><br/>
                 <input type="checkbox" id="js-offset-chbx"><label for="js-offset-chbx"> Смещение</label>
                 <div class="offset-params">
                     <label><span>x:</span><input type="number" id="js-offset-x" value="2"/></label> px<br/>
@@ -62,17 +65,21 @@ and open the template in the editor.
 
                 L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(map);
-                osmLayer.addTo(map);
+                });
+                
+                
+                var bingLayer = L.tileLayer.bing('AqwgRuMk4XT0LKK5Mvl4w4IOf1bisyiJMuHOvHU8dGmm7hmPUrFSuOzuE25cQ484');
+                
+                
 
-                var kadastr = L.tileLayer.wms("http://212.26.144.110/geowebcache/service/wms?tiled=true", {
+                var kadastrLayer = L.tileLayer.wms("http://212.26.144.110/geowebcache/service/wms?tiled=true", {
                     layers: 'kadastr',
                     format: 'image/png',
                     transparent: true,
                     attribution: "Kadastr",
-                    maxZoom:16
+                    zIndex:10
                 });
-                kadastr.addTo(map);
+                kadastrLayer.addTo(map);
 
                 map.on('click', function(e) {
                     
@@ -94,6 +101,19 @@ and open the template in the editor.
 
                 });
                 
+                function showBingLayer(){
+                    if(!map.hasLayer(bingLayer)){
+                        map.addLayer(bingLayer);
+                        map.removeLayer(osmLayer);
+                    }                    
+                }
+                function showOSMLayer(){
+                    if(!map.hasLayer(osmLayer)){
+                        map.addLayer(osmLayer);
+                        map.removeLayer(bingLayer);
+                    }
+                }
+                
                 function showPopup(latlng, data){
                     if(!data.dilanka) return;
                     var popup = L.popup()
@@ -109,19 +129,38 @@ and open the template in the editor.
                         x=0;
                         y=0;
                     }
-                    $(kadastr.getContainer()).css({
+                    $(kadastrLayer.getContainer()).css({
                        'margin-top': y+'px',
                        'margin-left':x+'px'
                     });
                 }
                 $('#js-offset-x, #js-offset-y, #js-offset-chbx').on('change', function(e){
                     e.stopPropagation();
-                    console.log('change')
                     updateOffset();
                 });
                 $('#js-controll-panel').on('click dblclick mousedown', function(e){
                     e.stopPropagation();
                 });
+                
+                $('#js-satelite-chbx, #js-kadastr-chbx').on('change', function(){
+                    if($('#js-satelite-chbx').is(':checked')){
+                        showBingLayer();
+                    }
+                    else{
+                        showOSMLayer();
+                    }
+                    
+                    if($('#js-kadastr-chbx').is(':checked')){
+                        if(!map.hasLayer(kadastrLayer)){
+                            map.addLayer(kadastrLayer);
+                        }
+                    }
+                    else{
+                        map.removeLayer(kadastrLayer);
+                    }
+                });
+                
+                showOSMLayer();
             });
             
        

@@ -58,6 +58,16 @@
                     return {x:x, y:y};
             }
             $(function(){
+
+                var inputOffsetX = $('#js-offset-x');
+                var inputOffsetY = $('#js-offset-y');
+
+                if(null !== localStorage.getItem('offset-x')){
+                    inputOffsetX.val(parseFloat(localStorage.getItem('offset-x')));
+                    inputOffsetY.val(parseFloat(localStorage.getItem('offset-y')));
+                }
+                   
+
                 var map = L.map('js-map').setView([49.244320, 28.452712], 16);
                 var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -125,8 +135,10 @@
                 }
                 
                 function updateOffset(){
-                    var x = parseFloat($('#js-offset-x').val());
-                    var y = parseFloat($('#js-offset-y').val());
+                    var x = parseFloat(inputOffsetX.val());
+                    var y = parseFloat(inputOffsetY.val());
+                    localStorage.setItem('offset-x', x);
+                    localStorage.setItem('offset-y', y);
                     if(!$('#js-offset-chbx').is(':checked')){
                         x=0;
                         y=0;

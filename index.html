@@ -61,7 +61,10 @@
 
                 var inputOffsetX = $('#js-offset-x');
                 var inputOffsetY = $('#js-offset-y');
-
+                var offsetChbx = $('#js-offset-chbx');
+                function isOffsetEnabled(){
+                    return offsetChbx.is(':checked');
+                }
                 if(null !== localStorage.getItem('offset-x')){
                     inputOffsetX.val(parseFloat(localStorage.getItem('offset-x')));
                     inputOffsetY.val(parseFloat(localStorage.getItem('offset-y')));
@@ -93,8 +96,16 @@
                 kadastrLayer.addTo(map);
 
                 map.on('click', function(e) {
+                    var latlng = e.latlng;
+                    if(isOffsetEnabled()){
+                        var point = map.latLngToContainerPoint(latlng);                       
+                        point.x += parseFloat(inputOffsetX.val());
+                        point.y += parseFloat(inputOffsetY.val());
+                        //latlng = map.containerPointToLatLng(point);
+                    }
                     
-                    var metters = degrees2meters(e.latlng.lat, e.latlng.lng);                   
+                    
+                    var metters = degrees2meters(latlng.lat, latlng.lng);                   
                     $.ajax({
                         url: 'http://map.land.gov.ua/kadastrova-karta/getobjectinfo',
                         type: 'POST',
@@ -139,7 +150,7 @@
                     var y = parseFloat(inputOffsetY.val());
                     localStorage.setItem('offset-x', x);
                     localStorage.setItem('offset-y', y);
-                    if(!$('#js-offset-chbx').is(':checked')){
+                    if(!isOffsetEnabled()){
                         x=0;
                         y=0;
                     }

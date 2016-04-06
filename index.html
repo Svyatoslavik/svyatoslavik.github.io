@@ -99,9 +99,9 @@
                     var latlng = e.latlng;
                     if(isOffsetEnabled()){
                         var point = map.latLngToContainerPoint(latlng);                       
-                        point.x += parseFloat(inputOffsetX.val());
-                        point.y += parseFloat(inputOffsetY.val());
-                        //latlng = map.containerPointToLatLng(point);
+                        point.x -= parseFloat(inputOffsetX.val());
+                        point.y -= parseFloat(inputOffsetY.val());
+                        latlng = map.containerPointToLatLng(point);
                     }
                     
                     

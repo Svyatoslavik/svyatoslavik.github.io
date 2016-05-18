@@ -114,7 +114,6 @@
                             x:metters.y.toFixed(7),
                             y:metters.x.toFixed(7),
                             zoom:16,
-//                            zoom:Math.min(map.getZoom()+1,16),
                             actLayers:['kadastr']
                         },
                         success: function (data) {
@@ -178,6 +177,7 @@
                     if($('#js-kadastr-chbx').is(':checked')){
                         if(!map.hasLayer(kadastrLayer)){
                             map.addLayer(kadastrLayer);
+                            updateOffset();
                         }
                     }
                     else{

@@ -75,20 +75,20 @@
           this.hashChangeInterval = setInterval(onHashChange, 50);
         }
       }
-      return this.map.on("baselayerchange", function(e) {
-        var pstate, _ref;
-        _this.base = (_ref = _this.options.lc._layers[e.layer._leaflet_id].name).replace.apply(_ref, _this.options.formatBase);
-        pstate = _this.formatState();
-        if (history.pushState) {
-          if (location.hash !== pstate[2] && !_this.moving) {
-            return history.pushState.apply(history, pstate);
-          }
-        } else {
-          if (location.hash !== pstate[2] && !_this.moving) {
-            return location.hash = pstate[2];
-          }
-        }
-      });
+//      return this.map.on("baselayerchange", function(e) {
+//        var pstate, _ref;
+//        _this.base = (_ref = _this.options.lc._layers[e.layer._leaflet_id].name).replace.apply(_ref, _this.options.formatBase);
+//        pstate = _this.formatState();
+//        if (history.pushState) {
+//          if (location.hash !== pstate[2] && !_this.moving) {
+//            return history.pushState.apply(history, pstate);
+//          }
+//        } else {
+//          if (location.hash !== pstate[2] && !_this.moving) {
+//            return location.hash = pstate[2];
+//          }
+//        }
+//      });
     },
     parseHash: function(hash) {
       var args, lat, latIndex, lngIndex, lon, out, path, zIndex, zoom;

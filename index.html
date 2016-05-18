@@ -5,7 +5,7 @@
         <title>Удобная Кадастровая Карта Украины</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v1.0.0-beta.2/leaflet.css" />
         <script src="http://cdn.leafletjs.com/leaflet/v1.0.0-beta.2/leaflet.js"></script>
         <script src="leaflet-bing-layer.js"></script>
         <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
@@ -31,19 +31,20 @@
                 margin-bottom: 1px;
                 font-size: 16px;
             }
-            label span{
+            .offset-params label span{
                 width: 10px;
                 display: inline-block;
+            }
+            .shift-control{
+                right: 10px; top: 115px; background: #eee; padding: 5px; float: right;
             }
         </style>
     </head>
     <body>
         <div></div>
         <div id="js-map" class="map">
-            <div id="js-controll-panel" class="leaflet-control leaflet-bar mycontrol" style="left: 10px; top: 115px; background: #eee; padding: 5px;">
-               <input type="checkbox" id="js-satelite-chbx"><label for="js-satelite-chbx"> Спутник</label><br/>
-               <input type="checkbox" id="js-kadastr-chbx" checked="checked"><label for="js-kadastr-chbx"> Кадастр</label><br/>
-                <input type="checkbox" id="js-offset-chbx"><label for="js-offset-chbx"> Смещение</label>
+            <div id="js-controll-panel" class="leaflet-control leaflet-bar shift-control">              
+                <input type="checkbox" id="js-offset-chbx"><label for="js-offset-chbx">Смещение кадастра</label>
                 <div class="offset-params">
                     <label><span>x:</span><input type="number" id="js-offset-x" value="2"/></label> px<br/>
                     <label><span>y:</span><input type="number" id="js-offset-y" value="-2"/></label> px
@@ -58,7 +59,7 @@
                     var y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
                     y = y * 20037508.34 / 180;
                     return {x:x, y:y};
-            }
+            };
             $(function(){
 
                 var inputOffsetX = $('#js-offset-x');
@@ -73,9 +74,14 @@
                 }
                    
 
-                var map = L.map('js-map').setView([49.244320, 28.452712], 16).addHash();
+                
                 var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                });
+                
+                var tourstartLayer = L.tileLayer('http://tiles.tourstart.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="http://tourstart.org/legalissues/">Tourstart</a> contributors',
+                    maxNativeZoom: 17
                 });
 
                 L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
@@ -95,7 +101,36 @@
                     zIndex:10,
                     maxNativeZoom: 16,
                 });
-                kadastrLayer.addTo(map);
+                var map = L.map('js-map').setView([49.244320, 28.452712], 16);
+                              
+                map.on('overlayadd', function(){
+                    updateShiftPanelVisibility();
+                    updateOffset();
+                    
+                });
+                map.on('overlayremove', function(){
+                    updateShiftPanelVisibility();
+                });
+                
+                
+                
+                map.addLayer(osmLayer);
+                kadastrLayer.addTo(map);  
+                
+                
+                
+                var baseMaps = {
+                    "Улицы": osmLayer,
+                    "Старые улицы":tourstartLayer,
+                    "Спутник": bingLayer
+                };
+                var overlayMaps = {
+                    "Кадастр": kadastrLayer
+                };
+                L.control.layers(baseMaps, overlayMaps).addTo(map);
+                
+                map.addHash();
+                
 
                 map.on('click', function(e) {
                     var latlng = e.latlng;
@@ -125,19 +160,15 @@
 
                 });
                 
-                function showBingLayer(){
-                    if(!map.hasLayer(bingLayer)){
-                        map.addLayer(bingLayer);
-                        map.removeLayer(osmLayer);
-                    }                    
-                }
-                function showOSMLayer(){
-                    if(!map.hasLayer(osmLayer)){
-                        map.addLayer(osmLayer);
-                        map.removeLayer(bingLayer);
+                function updateShiftPanelVisibility(){
+                    if(map.hasLayer(kadastrLayer)){
+                        $('#js-controll-panel').show(250);
+                    }
+                    else{
+                        $('#js-controll-panel').hide(250);
                     }
                 }
-                
+                                
                 function showPopup(latlng, data){
                     if(!data.dilanka) return;
                     var popup = L.popup()
@@ -167,27 +198,6 @@
                 $('#js-controll-panel').on('click dblclick mousedown', function(e){
                     e.stopPropagation();
                 });
-                
-                $('#js-satelite-chbx, #js-kadastr-chbx').on('change', function(){
-                    if($('#js-satelite-chbx').is(':checked')){
-                        showBingLayer();
-                    }
-                    else{
-                        showOSMLayer();
-                    }
-                    
-                    if($('#js-kadastr-chbx').is(':checked')){
-                        if(!map.hasLayer(kadastrLayer)){
-                            map.addLayer(kadastrLayer);
-                            updateOffset();
-                        }
-                    }
-                    else{
-                        map.removeLayer(kadastrLayer);
-                    }
-                });
-                
-                showOSMLayer();
             });
             
        

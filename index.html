@@ -44,10 +44,11 @@
         <div></div>
         <div id="js-map" class="map">
             <div id="js-controll-panel" class="leaflet-control leaflet-bar shift-control">              
-                <input type="checkbox" id="js-offset-chbx"><label for="js-offset-chbx">Смещение кадастра</label>
+                <input type="checkbox" id="js-offset-chbx" checked><label for="js-offset-chbx">Смещение кадастра</label><br/>
+                <input type="checkbox" id="js-adaptive-chbx" checked><label for="js-adaptive-chbx">адаптивное</label>
                 <div class="offset-params">
-                    <label><span>x:</span><input type="number" id="js-offset-x" value="2"/></label> px<br/>
-                    <label><span>y:</span><input type="number" id="js-offset-y" value="-2"/></label> px
+                    <label><span>x:</span><input type="number" id="js-offset-x" value="17"/></label> px<br/>
+                    <label><span>y:</span><input type="number" id="js-offset-y" value="-16"/></label> px
                 </div>
                 
                 <div id="distance"></div>
@@ -61,16 +62,33 @@
                     return {x:x, y:y};
             };
             $(function(){
+                var STORAGE_KEYS = {
+                    TOP: 'offset-top',
+                    LEFT:'offset-left'
+                };
+
+                function getStorageVal(key){
+                    return localStorage.getItem(key);
+                }
+                function setStorageVal(key, val){
+                    return localStorage.setItem(key, val);
+                }
 
                 var inputOffsetX = $('#js-offset-x');
                 var inputOffsetY = $('#js-offset-y');
                 var offsetChbx = $('#js-offset-chbx');
+                var adaptiveChbx = $('#js-adaptive-chbx');
                 function isOffsetEnabled(){
                     return offsetChbx.is(':checked');
                 }
-                if(null !== localStorage.getItem('offset-x')){
-                    inputOffsetX.val(parseFloat(localStorage.getItem('offset-x')));
-                    inputOffsetY.val(parseFloat(localStorage.getItem('offset-y')));
+
+                function isAdaptiveEnabled(){
+                    return adaptiveChbx.is(':checked');
+                }
+
+                if(null !== getStorageVal(STORAGE_KEYS.LEFT)){
+                    inputOffsetX.val(parseFloat(getStorageVal(STORAGE_KEYS.LEFT)));
+                    inputOffsetY.val(parseFloat(getStorageVal(STORAGE_KEYS.TOP)));
                 }
                    
 
@@ -105,14 +123,17 @@
                               
                 map.on('overlayadd', function(){
                     updateShiftPanelVisibility();
-                    updateOffset();
+                    updateKadastrLayerMargins();
                     
                 });
                 map.on('overlayremove', function(){
                     updateShiftPanelVisibility();
                 });
                 
-                
+                map.on('zoomend', function(){
+                    //console.log('zoomlevelschange')
+                    updateKadastrLayerMargins();
+                });
                 
                 map.addLayer(osmLayer);
                 kadastrLayer.addTo(map);  
@@ -159,6 +180,8 @@
                     });
 
                 });
+
+
                 
                 function updateShiftPanelVisibility(){
                     if(map.hasLayer(kadastrLayer)){
@@ -176,24 +199,41 @@
                         .setContent(data.dilanka)
                         .openOn(map);
                 }
-                
-                function updateOffset(){
-                    var x = parseFloat(inputOffsetX.val());
-                    var y = parseFloat(inputOffsetY.val());
-                    localStorage.setItem('offset-x', x);
-                    localStorage.setItem('offset-y', y);
+                                
+                function getKadastrOffset(){
                     if(!isOffsetEnabled()){
-                        x=0;
-                        y=0;
+                        return {top:0, left:0};
                     }
+                    var top = parseFloat(inputOffsetY.val());
+                    var left = parseFloat(inputOffsetX.val());
+                                        
+                    var k = 1;
+                    if(isAdaptiveEnabled()){
+                        k = Math.pow(2, map.getZoom()) / Math.pow(2,18);
+                    }
+                    
+                    return {
+                        top:top*k,
+                        left:left*k
+                    }
+                }
+
+                function updateKadastrLayerMargins(){
+                    var offset = getKadastrOffset();                    
                     $(kadastrLayer.getContainer()).css({
-                       'margin-top': y+'px',
-                       'margin-left':x+'px'
+                       'margin-top': offset.top+'px',
+                       'margin-left': offset.left+'px'
                     });
                 }
-                $('#js-offset-x, #js-offset-y, #js-offset-chbx').on('change', function(e){
+
+                $('#js-offset-x, #js-offset-y, #js-offset-chbx, #js-adaptive-chbx').on('change', function(e){
                     e.stopPropagation();
-                    updateOffset();
+                    var x = parseFloat(inputOffsetX.val());
+                    var y = parseFloat(inputOffsetY.val());
+                    setStorageVal(STORAGE_KEYS.TOP, y);
+                    setStorageVal(STORAGE_KEYS.LEFT, x); 
+                    updateKadastrLayerMargins();
+
                 });
                 $('#js-controll-panel').on('click dblclick mousedown', function(e){
                     e.stopPropagation();

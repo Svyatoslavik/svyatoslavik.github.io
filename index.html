@@ -154,7 +154,12 @@
                 
 
                 map.on('click', function(e) {
-                    var latlng = e.latlng;
+                    var offset = getKadastrOffset();
+                    var point = map.latLngToContainerPoint(e.latlng);                       
+                    point.x -= offset.left;
+                    point.y -= offset.top;
+                    var latlng = map.containerPointToLatLng(point);
+
                     if(isOffsetEnabled()){
                         var point = map.latLngToContainerPoint(latlng);                       
                         point.x -= parseFloat(inputOffsetX.val());
@@ -211,7 +216,7 @@
                     if(isAdaptiveEnabled()){
                         k = Math.pow(2, map.getZoom()) / Math.pow(2,18);
                     }
-                    
+
                     return {
                         top:top*k,
                         left:left*k

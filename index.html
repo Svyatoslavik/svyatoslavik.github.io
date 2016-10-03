@@ -120,6 +120,13 @@
                     maxNativeZoom: 16,
                 });
                 var map = L.map('js-map').setView([49.244320, 28.452712], 16);
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position){
+                        map.panTo(L.latLng(position.coords.latitude, position.coords.longitude));
+                    });
+                } 
+
+
                               
                 map.on('overlayadd', function(){
                     updateShiftPanelVisibility();

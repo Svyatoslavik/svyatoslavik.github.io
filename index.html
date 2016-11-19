@@ -62,6 +62,11 @@
                     return {x:x, y:y};
             };
             $(function(){
+                var inputOffsetX = $('#js-offset-x'),
+                    inputOffsetY = $('#js-offset-y'),
+                    offsetChbx = $('#js-offset-chbx'),
+                    adaptiveChbx = $('#js-adaptive-chbx');
+
                 var STORAGE_KEYS = {
                     TOP: 'offset-top',
                     LEFT:'offset-left'
@@ -74,10 +79,7 @@
                     return localStorage.setItem(key, val);
                 }
 
-                var inputOffsetX = $('#js-offset-x');
-                var inputOffsetY = $('#js-offset-y');
-                var offsetChbx = $('#js-offset-chbx');
-                var adaptiveChbx = $('#js-adaptive-chbx');
+               
                 function isOffsetEnabled(){
                     return offsetChbx.is(':checked');
                 }
@@ -137,13 +139,13 @@
                     updateShiftPanelVisibility();
                 });
                 
-                map.on('zoomend', function(){
-                    //console.log('zoomlevelschange')
+                map.on('zoomend', function(){                    
                     updateKadastrLayerMargins();
                 });
                 
                 map.addLayer(osmLayer);
                 kadastrLayer.addTo(map);  
+                updateKadastrLayerMargins();
                 
                 
                 
@@ -195,7 +197,7 @@
 
 
                 
-                function updateShiftPanelVisibility(){
+                function updateShiftPanelVisibility(){                    
                     if(map.hasLayer(kadastrLayer)){
                         $('#js-controll-panel').show(250);
                     }
@@ -230,7 +232,7 @@
                     }
                 }
 
-                function updateKadastrLayerMargins(){
+                function updateKadastrLayerMargins(){                    
                     var offset = getKadastrOffset();                    
                     $(kadastrLayer.getContainer()).css({
                        'margin-top': offset.top+'px',

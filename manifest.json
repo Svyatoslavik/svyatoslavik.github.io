@@ -1,0 +1,17 @@
+{
+    "name": "Кадастр Укараины",
+    "short_name": "Кадастр",
+    "icons": [{
+        "src": "icons/64.png",
+        "sizes": "64x64"
+    }, {
+        "src": "icons/128.png",
+        "sizes": "128x128"
+    }, {
+        "src": "icons/512.png",
+        "sizes": "512x512"
+    }],
+    "start_url": "/index.html",
+    "display": "fullscreen",
+    "orientation": "landscape"
+}

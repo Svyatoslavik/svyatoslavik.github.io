@@ -1,272 +1,297 @@
 <!DOCTYPE html>
 
 <html>
-    <head>
-        <title>Удобная Кадастровая Карта Украины</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="leaflet.css" />
-        <script src="leaflet.js"></script>
-        <script src="leaflet-bing-layer.js"></script>
-        <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
-        <script src="https://code.jquery.com/jquery-1.12.2.min.js" integrity="sha256-lZFHibXzMHo3GGeehn1hudTAP3Sc0uKXBXAzHX1sjtk=" crossorigin="anonymous"></script>
-        <script src="leaflet-hash.js"></script>
 
-        <style>
-             html, body, .map {
-                height: 100%;
-                width: 100%;
-                margin:0;
-                padding:0;
-            }
-            .map{
-                cursor: default;
-            }
-            .offset-params {
-                border: 1px solid #0000ff;
-                padding: 5px;
-            }
-            input[type="number"] {
-                width: 50px;
-                margin-bottom: 1px;
-                font-size: 16px;
-            }
-            .offset-params label span {
-                width: 10px;
-                display: inline-block;
-            }
-            .shift-control {
-                right: 10px; top: 115px; background: #eee; padding: 5px; float: right;
-            }
-            @media (max-width: 600px) {
-              .shift-control {
-                display: none;
-              }
-            }
-        </style>
-    </head>
-    <body>
-        <div></div>
-        <div id="js-map" class="map">
-            <div id="js-controll-panel" class="leaflet-control leaflet-bar shift-control">              
-                <input type="checkbox" id="js-offset-chbx" checked><label for="js-offset-chbx">Смещение кадастра</label><br/>
-                <input type="checkbox" id="js-adaptive-chbx" checked><label for="js-adaptive-chbx">адаптивное</label>
-                <div class="offset-params">
-                    <label><span>x:</span><input type="number" id="js-offset-x" value="16"/></label> px<br/>
-                    <label><span>y:</span><input type="number" id="js-offset-y" value="-12"/></label> px
-                </div>
-                
-                <div id="distance"></div>
-            </div>
-        </div>
-        <script>
-            var degrees2meters = function(lat, lon) {
-                    var x = lon * 20037508.34 / 180;
-                    var y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
-                    y = y * 20037508.34 / 180;
-                    return {x:x, y:y};
-            };
-            $(function(){
-                var inputOffsetX = $('#js-offset-x'),
-                    inputOffsetY = $('#js-offset-y'),
-                    offsetChbx = $('#js-offset-chbx'),
-                    adaptiveChbx = $('#js-adaptive-chbx');
+<head>
+    <title>Удобная Кадастровая Карта Украины</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
+    <script src="leaflet-bing-layer.js"></script>
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Promise"></script>
+    <script src="https://code.jquery.com/jquery-1.12.2.min.js" integrity="sha256-lZFHibXzMHo3GGeehn1hudTAP3Sc0uKXBXAzHX1sjtk=" crossorigin="anonymous"></script>
+    <script src="leaflet-hash.js"></script>
 
-                var STORAGE_KEYS = {
-                    TOP: 'offset-top',
-                    LEFT:'offset-left'
-                };
-
-                function getStorageVal(key){
-                    return localStorage.getItem(key);
-                }
-                function setStorageVal(key, val){
-                    return localStorage.setItem(key, val);
-                }
-
-               
-                function isOffsetEnabled(){
-                    return offsetChbx.is(':checked');
-                }
-
-                function isAdaptiveEnabled(){
-                    return adaptiveChbx.is(':checked');
-                }
-
-                if(null !== getStorageVal(STORAGE_KEYS.LEFT)){
-                    inputOffsetX.val(parseFloat(getStorageVal(STORAGE_KEYS.LEFT)));
-                    inputOffsetY.val(parseFloat(getStorageVal(STORAGE_KEYS.TOP)));
-                }
-                   
-
-                
-                var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                });
-                
-                
-                L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                });
-                
-                
-                var bingLayer = L.tileLayer.bing('AqwgRuMk4XT0LKK5Mvl4w4IOf1bisyiJMuHOvHU8dGmm7hmPUrFSuOzuE25cQ484');
-                            
-
-                var kadastrLayer = L.tileLayer.wms("http://212.26.144.110/geowebcache/service/wms?tiled=true", {
-                    layers: 'kadastr',
-                    format: 'image/png',
-                    transparent: true,
-                    attribution: "Kadastr",
-                    zIndex:10,
-                    maxNativeZoom: 16,
-                });
-                var map = L.map('js-map').setView([49.244320, 28.452712], 16);
-                if (navigator.geolocation && !location.hash) {
-                    navigator.geolocation.getCurrentPosition(function(position){
-                        map.panTo(L.latLng(position.coords.latitude, position.coords.longitude));
-                    });
-                } 
-
-
-                              
-                map.on('overlayadd', function(){
-                    updateShiftPanelVisibility();
-                    updateKadastrLayerMargins();
-                    
-                });
-                map.on('overlayremove', function(){
-                    updateShiftPanelVisibility();
-                });
-                
-                map.on('zoomend', function(){                    
-                    updateKadastrLayerMargins();
-                });
-                
-                map.addLayer(osmLayer);
-                kadastrLayer.addTo(map);  
-                updateKadastrLayerMargins();
-                
-                
-                
-                var baseMaps = {
-                    "Улицы": osmLayer,
-                    "Спутник": bingLayer
-                };
-                var overlayMaps = {
-                    "Кадастр": kadastrLayer
-                };
-                L.control.layers(baseMaps, overlayMaps).addTo(map);
-                
-                map.addHash();
-                
-
-                map.on('click', function(e) {
-                    var offset = getKadastrOffset();
-                    var point = map.latLngToContainerPoint(e.latlng);                       
-                    point.x -= offset.left;
-                    point.y -= offset.top;
-                    var latlng = map.containerPointToLatLng(point);
-
-                    if(isOffsetEnabled()){
-                        var point = map.latLngToContainerPoint(latlng);                       
-                        point.x -= parseFloat(inputOffsetX.val());
-                        point.y -= parseFloat(inputOffsetY.val());
-                        latlng = map.containerPointToLatLng(point);
-                    }
-                    
-                    
-                    var metters = degrees2meters(latlng.lat, latlng.lng);                   
-                    $.ajax({
-                        url: 'http://map.land.gov.ua/kadastrova-karta/getobjectinfo',
-                        type: 'POST',
-                        dataType : "json",
-                        data: {
-                            x:metters.y.toFixed(7),
-                            y:metters.x.toFixed(7),
-                            zoom:16,
-                            actLayers:['kadastr']
-                        },
-                        success: function (data) {
-                            showPopup(e.latlng, data);
-                        }
-                    });
-
-                });
-
-
-                
-                function updateShiftPanelVisibility(){                    
-                    if(map.hasLayer(kadastrLayer)){
-                        $('#js-controll-panel').show(250);
-                    }
-                    else{
-                        $('#js-controll-panel').hide(250);
-                    }
-                }
-                                
-                function showPopup(latlng, data){
-                    if(!data.dilanka) return;
-                    var popup = L.popup()
-                        .setLatLng(latlng)
-                        .setContent(data.dilanka)
-                        .openOn(map);
-                }
-                                
-                function getKadastrOffset(){
-                    if(!isOffsetEnabled()){
-                        return {top:0, left:0};
-                    }
-                    var top = parseFloat(inputOffsetY.val());
-                    var left = parseFloat(inputOffsetX.val());
-                                        
-                    var k = 1;
-                    if(isAdaptiveEnabled()){
-                        k = Math.pow(2, map.getZoom()) / Math.pow(2,18);
-                    }
-
-                    return {
-                        top:top*k,
-                        left:left*k
-                    }
-                }
-
-                function updateKadastrLayerMargins(){                    
-                    var offset = getKadastrOffset();                    
-                    $(kadastrLayer.getContainer()).css({
-                       'margin-top': offset.top+'px',
-                       'margin-left': offset.left+'px'
-                    });
-                }
-
-                $('#js-offset-x, #js-offset-y, #js-offset-chbx, #js-adaptive-chbx').on('change', function(e){
-                    e.stopPropagation();
-                    var x = parseFloat(inputOffsetX.val());
-                    var y = parseFloat(inputOffsetY.val());
-                    setStorageVal(STORAGE_KEYS.TOP, y);
-                    setStorageVal(STORAGE_KEYS.LEFT, x); 
-                    updateKadastrLayerMargins();
-
-                });
-                $('#js-controll-panel').on('click dblclick mousedown', function(e){
-                    e.stopPropagation();
-                });
-            });
-            
-       
+    <style>
+        html,
+        body,
+        .map {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
         
-        </script>
+        .map {
+            cursor: default;
+        }
+        
+        .offset-params {
+            border: 1px solid #0000ff;
+            padding: 5px;
+        }
+        
+        input[type="number"] {
+            width: 50px;
+            margin-bottom: 1px;
+            font-size: 16px;
+        }
+        
+        .offset-params label span {
+            width: 10px;
+            display: inline-block;
+        }
+        
+        .shift-control {
+            right: 10px;
+            top: 115px;
+            background: #eee;
+            padding: 5px;
+            float: right;
+        }
+        
+        @media (max-width: 600px) {
+            .shift-control {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div></div>
+    <div id="js-map" class="map">
+        <div id="js-controll-panel" class="leaflet-control leaflet-bar shift-control">
+            <input type="checkbox" id="js-offset-chbx" checked><label for="js-offset-chbx">Смещение кадастра</label><br/>
+            <input type="checkbox" id="js-adaptive-chbx" checked><label for="js-adaptive-chbx">адаптивное</label>
+            <div class="offset-params">
+                <label><span>x:</span><input type="number" id="js-offset-x" value="16"/></label> px<br/>
+                <label><span>y:</span><input type="number" id="js-offset-y" value="-12"/></label> px
+            </div>
+
+            <div id="distance"></div>
+        </div>
+    </div>
+    <script>
+        var degrees2meters = function(lat, lon) {
+            var x = lon * 20037508.34 / 180;
+            var y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+            y = y * 20037508.34 / 180;
+            return {
+                x: x,
+                y: y
+            };
+        };
+        $(function() {
+            var inputOffsetX = $('#js-offset-x'),
+                inputOffsetY = $('#js-offset-y'),
+                offsetChbx = $('#js-offset-chbx'),
+                adaptiveChbx = $('#js-adaptive-chbx');
+
+            var STORAGE_KEYS = {
+                TOP: 'offset-top',
+                LEFT: 'offset-left'
+            };
+
+            function getStorageVal(key) {
+                return localStorage.getItem(key);
+            }
+
+            function setStorageVal(key, val) {
+                return localStorage.setItem(key, val);
+            }
+
+
+            function isOffsetEnabled() {
+                return offsetChbx.is(':checked');
+            }
+
+            function isAdaptiveEnabled() {
+                return adaptiveChbx.is(':checked');
+            }
+
+            if (null !== getStorageVal(STORAGE_KEYS.LEFT)) {
+                inputOffsetX.val(parseFloat(getStorageVal(STORAGE_KEYS.LEFT)));
+                inputOffsetY.val(parseFloat(getStorageVal(STORAGE_KEYS.TOP)));
+            }
+
+
+
+            var osmLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+
+            L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+
+            var bingLayer = L.tileLayer.bing('AqwgRuMk4XT0LKK5Mvl4w4IOf1bisyiJMuHOvHU8dGmm7hmPUrFSuOzuE25cQ484');
+
+
+            var kadastrLayer = L.tileLayer.wms("http://212.26.144.110/geowebcache/service/wms?tiled=true", {
+                layers: 'kadastr',
+                format: 'image/png',
+                transparent: true,
+                attribution: "Kadastr",
+                zIndex: 10,
+                maxNativeZoom: 16,
+            });
+            var map = L.map('js-map').setView([49.244320, 28.452712], 16);
+            if (navigator.geolocation && !location.hash) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    map.panTo(L.latLng(position.coords.latitude, position.coords.longitude));
+                });
+            }
+
+
+
+            map.on('overlayadd', function() {
+                updateShiftPanelVisibility();
+                updateKadastrLayerMargins();
+
+            });
+            map.on('overlayremove', function() {
+                updateShiftPanelVisibility();
+            });
+
+            map.on('zoomend', function() {
+                updateKadastrLayerMargins();
+            });
+
+            map.addLayer(osmLayer);
+            kadastrLayer.addTo(map);
+            updateKadastrLayerMargins();
+
+
+
+            var baseMaps = {
+                "Улицы": osmLayer,
+                "Спутник": bingLayer
+            };
+            var overlayMaps = {
+                "Кадастр": kadastrLayer
+            };
+            L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+            map.addHash();
+
+
+            map.on('click', function(e) {
+                var offset = getKadastrOffset();
+                var point = map.latLngToContainerPoint(e.latlng);
+                point.x -= offset.left;
+                point.y -= offset.top;
+                var latlng = map.containerPointToLatLng(point);
+
+                if (isOffsetEnabled()) {
+                    var point = map.latLngToContainerPoint(latlng);
+                    point.x -= parseFloat(inputOffsetX.val());
+                    point.y -= parseFloat(inputOffsetY.val());
+                    latlng = map.containerPointToLatLng(point);
+                }
+
+
+                var metters = degrees2meters(latlng.lat, latlng.lng);
+                $.ajax({
+                    url: 'http://map.land.gov.ua/kadastrova-karta/getobjectinfo',
+                    type: 'POST',
+                    dataType: "json",
+                    data: {
+                        x: metters.y.toFixed(7),
+                        y: metters.x.toFixed(7),
+                        zoom: 16,
+                        actLayers: ['kadastr']
+                    },
+                    success: function(data) {
+                        showPopup(e.latlng, data);
+                    }
+                });
+
+            });
+
+
+
+            function updateShiftPanelVisibility() {
+                if (map.hasLayer(kadastrLayer)) {
+                    $('#js-controll-panel').show(250);
+                } else {
+                    $('#js-controll-panel').hide(250);
+                }
+            }
+
+            function showPopup(latlng, data) {
+                if (!data.dilanka) return;
+                var popup = L.popup()
+                    .setLatLng(latlng)
+                    .setContent(data.dilanka)
+                    .openOn(map);
+            }
+
+            function getKadastrOffset() {
+                if (!isOffsetEnabled()) {
+                    return {
+                        top: 0,
+                        left: 0
+                    };
+                }
+                var top = parseFloat(inputOffsetY.val());
+                var left = parseFloat(inputOffsetX.val());
+
+                var k = 1;
+                if (isAdaptiveEnabled()) {
+                    k = Math.pow(2, map.getZoom()) / Math.pow(2, 18);
+                }
+
+                return {
+                    top: top * k,
+                    left: left * k
+                }
+            }
+
+            function updateKadastrLayerMargins() {
+                var offset = getKadastrOffset();
+                $(kadastrLayer.getContainer()).css({
+                    'margin-top': offset.top + 'px',
+                    'margin-left': offset.left + 'px'
+                });
+            }
+
+            $('#js-offset-x, #js-offset-y, #js-offset-chbx, #js-adaptive-chbx').on('change', function(e) {
+                e.stopPropagation();
+                var x = parseFloat(inputOffsetX.val());
+                var y = parseFloat(inputOffsetY.val());
+                setStorageVal(STORAGE_KEYS.TOP, y);
+                setStorageVal(STORAGE_KEYS.LEFT, x);
+                updateKadastrLayerMargins();
+
+            });
+            $('#js-controll-panel').on('click dblclick mousedown', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
     <!-- GOOGLE ANALYTICS -->
-        <script>
-          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-          })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    <script>
+        (function(i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function() {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
-          ga('create', 'UA-81334568-1', 'auto');
-          ga('send', 'pageview');
-
-        </script>
+        ga('create', 'UA-81334568-1', 'auto');
+        ga('send', 'pageview');
+    </script>
     <!-- // END GOOGLE ANALYTICS -->
-    </body>
+</body>
+
 </html>

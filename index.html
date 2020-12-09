@@ -131,8 +131,8 @@
 
             var bingLayer = L.tileLayer.bing('AqwgRuMk4XT0LKK5Mvl4w4IOf1bisyiJMuHOvHU8dGmm7hmPUrFSuOzuE25cQ484');
 
-
-            var kadastrLayer = L.tileLayer.wms("http://212.26.144.110/geowebcache/service/wms?tiled=true", {
+// https://m2.land.gov.ua/geowebcache/service/wms?tiled=true&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=kadastr&TILED=true&STYLES=&SRS=EPSG%3A900913&WIDTH=256&HEIGHT=256&CRS=EPSG%3A900913&BBOX=3135752.6483710706%2C6305749.085413901%2C3140644.618181322%2C6310641.055224152
+            var kadastrLayer = L.tileLayer.wms("https://m2.land.gov.ua/geowebcache/service/wms?tiled=true", {
                 layers: 'kadastr',
                 format: 'image/png',
                 transparent: true,
